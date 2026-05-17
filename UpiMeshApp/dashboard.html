@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>UPI Mesh Network - Status Dashboard</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@600;700;800&family=Inter:wght@400;500&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-dim": "#10131a",
+                        "background": "#10131a",
+                        "surface-container-low": "#191c22",
+                        "outline-variant": "#3b494b",
+                        "surface-tint": "#00dbe9",
+                        "surface-container-high": "#272a31",
+                        "on-surface-variant": "#b9cacb",
+                        "error-container": "#93000a",
+                        "surface-container-lowest": "#0b0e14",
+                        "primary-container": "#00f0ff",
+                        "on-background": "#e1e2eb",
+                        "on-error": "#690005",
+                        "outline": "#849495",
+                        "on-primary": "#00363a",
+                        "surface": "#10131a",
+                        "surface-container": "#1d2026",
+                        "secondary": "#c2c7d0",
+                        "primary": "#dbfcff",
+                        "on-surface": "#e1e2eb",
+                        "surface-variant": "#32353c",
+                        "surface-container-highest": "#32353c",
+                        "surface-bright": "#363940",
+                        "on-secondary": "#2c3138",
+                        "on-primary-container": "#006970",
+                        "error": "#ffb4ab"
+                    },
+                    fontFamily: {
+                        "code-md": ["JetBrains Mono"],
+                        "code-sm": ["JetBrains Mono"],
+                        "body-sm": ["Inter"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "label-caps": ["JetBrains Mono"],
+                        "body-md": ["Inter"],
+                        "headline-sm": ["Hanken Grotesk"],
+                        "display-lg": ["Hanken Grotesk"]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #0b0e14; color: #e1e2eb; -webkit-font-smoothing: antialiased; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .mesh-line { background: linear-gradient(90deg, transparent 0%, #00f0ff 50%, transparent 100%); height: 1px; opacity: 0.3; }
+        .glow-cyan { box-shadow: 0 0 15px rgba(0, 240, 255, 0.15); }
+        .pulse-node { box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.4); animation: pulse 2s infinite; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #3b494b; border-radius: 4px; }
+        @keyframes pulse { 
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.7); } 
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(0, 240, 255, 0); } 
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 240, 255, 0); } 
+        }
+        #networkGraphContainer { position: relative; width: 100%; height: 100%; }
+        /* Smooth transitions for view switching */
+        .view-section { transition: opacity 0.3s ease; }
+    </style>
+</head>
+<body class="font-body-md overflow-hidden h-screen flex flex-col">
+
+    <!-- TopNavBar -->
+    <header class="flex justify-between items-center w-full px-10 h-16 z-50 sticky top-0 bg-surface-container-lowest border-b border-outline-variant">
+        <div class="flex items-center gap-8">
+            <div class="text-headline-sm font-extrabold text-primary-container tracking-tighter">
+                UPI Mesh Simulator
+            </div>
+            <nav class="hidden md:flex items-center gap-6">
+                <a class="text-label-caps font-bold text-primary-container border-b-2 border-primary-container pb-1 tracking-[0.1em] text-[11px]" href="#">NETWORK STATS</a>
+                <a class="text-label-caps font-medium text-on-surface-variant hover:text-primary transition-colors duration-200 tracking-[0.1em] text-[11px]" href="#">LIVE TRAFFIC</a>
+                <a class="text-label-caps font-medium text-on-surface-variant hover:text-primary transition-colors duration-200 tracking-[0.1em] text-[11px]" href="#">PEER EXPLORER</a>
+            </nav>
+            <div class="hidden lg:flex items-center gap-4 ml-4 pl-4 border-l border-outline-variant">
+                <div class="flex flex-col gap-1">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-label-caps font-bold text-primary-container flex items-center gap-1.5 tracking-[0.1em] text-[11px]">
+                            <span class="w-1.5 h-1.5 rounded-full bg-primary-container animate-pulse"></span>
+                            SYNC COMPLETE
+                        </span>
+                        <span class="text-code-sm text-primary-container text-[12px] font-medium">100%</span>
+                    </div>
+                    <div class="w-32 h-1 bg-surface-bright rounded-full overflow-hidden">
+                        <div class="h-full bg-primary-container glow-cyan" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+                <button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">notifications</button>
+                <button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">settings_suggest</button>
+                <button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">account_circle</button>
+            </div>
+            <button class="bg-primary-container text-on-primary font-bold text-[11px] tracking-[0.1em] font-label-caps px-4 py-2 rounded-lg hover:opacity-80 active:scale-95 transition-all">
+                CONNECT NODE
+            </button>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        <!-- SideNavBar -->
+        <aside class="w-64 flex flex-col bg-surface-container-lowest border-r border-outline-variant z-40">
+            <div class="p-6 border-b border-outline-variant">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center overflow-hidden border border-outline text-xl">
+                        👤
+                    </div>
+                    <div>
+                        <div class="text-[11px] tracking-[0.1em] font-bold font-label-caps text-primary-container uppercase">Mesh Admin</div>
+                        <div class="text-[12px] font-medium font-code-sm text-on-surface-variant">0x4f82...</div>
+                    </div>
+                </div>
+            </div>
+            <nav class="flex-1 py-4" id="sidebar-nav">
+                <div class="nav-item flex items-center gap-4 bg-primary-container/10 text-primary-container border-r-4 border-primary-container px-6 py-4 cursor-pointer anim-nav-item" data-target="view-dashboard">
+                    <span class="material-symbols-outlined">dashboard</span>
+                    <span class="text-[11px] tracking-[0.1em] font-bold font-label-caps uppercase">Dashboard</span>
+                </div>
+                <div class="nav-item flex items-center gap-4 text-on-surface-variant hover:bg-surface-variant/20 px-6 py-4 transition-all cursor-pointer anim-nav-item" data-target="view-send">
+                    <span class="material-symbols-outlined">send</span>
+                    <span class="text-[11px] tracking-[0.1em] font-bold font-label-caps uppercase">Send</span>
+                </div>
+                <div class="nav-item flex items-center gap-4 text-on-surface-variant hover:bg-surface-variant/20 px-6 py-4 transition-all cursor-pointer anim-nav-item" data-target="view-ledger">
+                    <span class="material-symbols-outlined">history_edu</span>
+                    <span class="text-[11px] tracking-[0.1em] font-bold font-label-caps uppercase">Ledger</span>
+                </div>
+                <div class="nav-item flex items-center gap-4 text-on-surface-variant hover:bg-surface-variant/20 px-6 py-4 transition-all cursor-pointer anim-nav-item" data-target="view-settings">
+                    <span class="material-symbols-outlined">settings</span>
+                    <span class="text-[11px] tracking-[0.1em] font-bold font-label-caps uppercase">Settings</span>
+                </div>
+                <div class="nav-item flex items-center gap-4 text-on-surface-variant hover:bg-surface-variant/20 px-6 py-4 transition-all cursor-pointer anim-nav-item" data-target="view-profile">
+                    <span class="material-symbols-outlined">account_circle</span>
+                    <span class="text-[11px] tracking-[0.1em] font-bold font-label-caps uppercase">Profile</span>
+                </div>
+            </nav>
+            <div class="p-6 border-t border-outline-variant">
+                <button id="gossipBtn" class="w-full bg-surface-variant text-on-surface py-3 rounded text-[11px] tracking-[0.1em] font-bold font-label-caps uppercase hover:bg-surface-container-high transition-colors mb-4 flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-sm">sensors</span> Gossip Round
+                </button>
+                <div class="flex flex-col gap-2">
+                    <div class="flex items-center gap-4 text-on-surface-variant hover:text-primary cursor-pointer px-1">
+                        <span class="material-symbols-outlined text-sm">terminal</span>
+                        <span class="text-[11px] tracking-[0.1em] font-bold font-label-caps uppercase">System Logs</span>
+                    </div>
+                    <div class="flex items-center gap-4 text-on-surface-variant hover:text-primary cursor-pointer px-1">
+                        <span class="material-symbols-outlined text-sm">help_center</span>
+                        <span class="text-[11px] tracking-[0.1em] font-bold font-label-caps uppercase">Support</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 relative overflow-y-auto custom-scrollbar bg-background p-10 flex flex-col gap-6" id="main-content">
+            
+            <div id="syncBanner" class="flex items-center justify-between bg-primary-container/10 border border-primary-container/30 p-4 rounded-xl mb-2 backdrop-blur-md opacity-0 transform -translate-y-4">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-primary-container">check_circle</span>
+                    <div>
+                        <div class="text-[11px] tracking-[0.1em] font-bold font-label-caps text-primary-container uppercase">Sync Complete</div>
+                        <div class="text-[14px] font-body-sm text-on-surface-variant">Network synchronized across 124 nodes.</div>
+                    </div>
+                </div>
+                <button class="material-symbols-outlined text-on-surface-variant hover:text-on-surface text-sm" onclick="document.getElementById('syncBanner').style.display='none'">close</button>
+            </div>
+
+            <!-- VIEW: DASHBOARD -->
+            <div id="view-dashboard" class="view-section flex flex-col flex-1">
+                <!-- Header Section -->
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <h1 class="text-[32px] font-bold leading-[1.2] font-headline-lg text-on-surface">UPI Mesh Network</h1>
+                        <p class="text-[16px] font-body-md text-on-surface-variant">Offline bluetooth protocol simulator</p>
+                    </div>
+                    <div class="flex gap-4">
+                        <button class="bg-primary-container text-on-primary px-6 py-2 rounded-lg text-[11px] tracking-[0.1em] font-bold font-label-caps hover:opacity-90 active:scale-95 transition-all glow-cyan uppercase" onclick="document.getElementById('gossipBtn').click()">
+                            Gossip Round
+                        </button>
+                        <button id="flushBtn" class="border border-primary-container text-primary-container px-6 py-2 rounded-lg text-[11px] tracking-[0.1em] font-bold font-label-caps hover:bg-primary-container/10 active:scale-95 transition-all uppercase">
+                            Flush Bridges
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Bento Grid Layout -->
+                <div class="grid grid-cols-12 grid-rows-6 gap-6 flex-1 min-h-[600px]">
+                    <!-- MeshGraph Main Panel -->
+                    <div class="col-span-8 row-span-4 bg-surface-container-low border border-outline-variant rounded-xl relative overflow-hidden flex flex-col shadow-[0_0_20px_rgba(0,240,255,0.03)] anim-panel">
+                        <div class="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container-low/50 backdrop-blur z-10">
+                            <span class="text-[11px] tracking-[0.1em] font-bold font-label-caps text-on-surface-variant uppercase">MeshGraph: Local Topology</span>
+                            <div class="flex gap-2 items-center">
+                                <span class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
+                                <span class="text-[12px] font-medium font-code-sm text-primary-container">Active Nodes: <span id="nodeCount">12</span></span>
+                            </div>
+                        </div>
+                        <div class="flex-1 relative bg-[#0b0e14]" style="background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px); background-size: 20px 20px;">
+                            <div id="networkGraphContainer" class="absolute inset-0 p-4">
+                                <canvas id="meshChart"></canvas>
+                            </div>
+                            <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+                                <div class="absolute top-[20%] left-[25%] flex flex-col items-center anim-node">
+                                    <div class="w-12 h-12 rounded-full bg-surface-variant border-2 border-outline-variant flex items-center justify-center text-on-surface-variant shadow-lg backdrop-blur"><span class="material-symbols-outlined">person</span></div>
+                                    <span class="text-[12px] font-medium font-code-sm mt-2 text-on-surface-variant px-2 py-0.5 bg-background/80 rounded">Alice</span>
+                                </div>
+                                <div class="absolute bottom-[20%] right-[25%] flex flex-col items-center anim-node">
+                                    <div class="w-12 h-12 rounded-full bg-surface-variant border-2 border-outline-variant flex items-center justify-center text-on-surface-variant shadow-lg backdrop-blur"><span class="material-symbols-outlined">person</span></div>
+                                    <span class="text-[12px] font-medium font-code-sm mt-2 text-on-surface-variant px-2 py-0.5 bg-background/80 rounded">Bob</span>
+                                </div>
+                                <div class="absolute top-[45%] left-[50%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center anim-bridge">
+                                    <div class="w-16 h-16 rounded-full bg-primary-container/20 border-2 border-primary-container flex items-center justify-center text-primary-container pulse-node glow-cyan backdrop-blur"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">router</span></div>
+                                    <span class="text-[12px] font-bold font-code-sm mt-2 text-primary-container px-2 py-0.5 bg-background/80 rounded">Bridge_Alpha</span>
+                                </div>
+                                <svg class="absolute inset-0 w-full h-full pointer-events-none opacity-40">
+                                    <line class="anim-line" stroke="#00f0ff" stroke-dasharray="5,5" stroke-width="2" x1="25%" x2="50%" y1="20%" y2="45%"></line>
+                                    <line class="anim-line" stroke="#00f0ff" stroke-width="2" x1="75%" x2="50%" y1="80%" y2="45%"></line>
+                                    <circle cx="50%" cy="45%" fill="url(#grad1)" opacity="0.1" r="150" class="anim-pulse-circle"></circle>
+                                    <defs>
+                                        <radialGradient cx="50%" cy="50%" id="grad1" r="50%">
+                                            <stop offset="0%" style="stop-color:#00f0ff;stop-opacity:1"></stop>
+                                            <stop offset="100%" style="stop-color:#00f0ff;stop-opacity:0"></stop>
+                                        </radialGradient>
+                                    </defs>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Stats Panel 1 -->
+                    <div class="col-span-4 row-span-2 bg-surface-container-low border border-outline-variant rounded-xl p-6 flex flex-col justify-between shadow-[0_0_20px_rgba(0,240,255,0.03)] anim-panel">
+                        <div class="flex justify-between items-start">
+                            <span class="text-[11px] tracking-[0.1em] font-bold font-label-caps text-on-surface-variant uppercase">Idempotency Cache Size</span>
+                            <span class="material-symbols-outlined text-primary-container">memory</span>
+                        </div>
+                        <div>
+                            <div id="cacheCounter" class="text-[48px] font-extrabold leading-[1.1] font-display-lg text-on-surface">1,248</div>
+                            <div class="flex items-center gap-1 text-primary-container mt-2">
+                                <span class="material-symbols-outlined text-sm">trending_up</span>
+                                <span class="text-[12px] font-medium font-code-sm">+12% from prev gossip</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Stats Panel 2 -->
+                    <div class="col-span-4 row-span-2 bg-surface-container-low border border-outline-variant rounded-xl p-6 flex flex-col justify-between shadow-[0_0_20px_rgba(0,240,255,0.03)] anim-panel">
+                        <div class="flex justify-between items-start">
+                            <span class="text-[11px] tracking-[0.1em] font-bold font-label-caps text-on-surface-variant uppercase">Gossip Transfers Count</span>
+                            <span class="material-symbols-outlined text-primary-container">hub</span>
+                        </div>
+                        <div>
+                            <div id="transferCounter" class="text-[48px] font-extrabold leading-[1.1] font-display-lg text-on-surface">42.8k</div>
+                            <div class="flex items-center gap-1 text-on-surface-variant mt-2">
+                                <span class="material-symbols-outlined text-sm">sync</span>
+                                <span class="text-[12px] font-medium font-code-sm">Real-time sync active</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Live Traffic Log -->
+                    <div class="col-span-8 row-span-2 bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden flex flex-col shadow-[0_0_20px_rgba(0,240,255,0.03)] anim-panel">
+                        <div class="p-4 border-b border-outline-variant flex justify-between items-center">
+                            <span class="text-[11px] tracking-[0.1em] font-bold font-label-caps text-on-surface-variant uppercase">Live Traffic Log</span>
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
+                                <span class="text-[12px] font-medium font-code-sm text-primary-container uppercase">Streaming</span>
+                            </div>
+                        </div>
+                        <div id="logContainer" class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+                            <div class="flex items-center gap-4 text-[12px] font-medium font-code-sm border-b border-outline-variant/30 pb-2">
+                                <span class="text-on-surface-variant w-20">12:05:42</span>
+                                <span class="material-symbols-outlined text-primary-container text-sm">check_circle</span>
+                                <span class="text-on-surface">Packet 0x7a... propagated via Bridge_Alpha</span>
+                            </div>
+                            <div class="flex items-center gap-4 text-[12px] font-medium font-code-sm border-b border-outline-variant/30 pb-2">
+                                <span class="text-on-surface-variant w-20">12:05:38</span>
+                                <span class="material-symbols-outlined text-primary-container text-sm">sync</span>
+                                <span class="text-on-surface">Gossip sync with Node_04 complete</span>
+                            </div>
+                            <div class="flex items-center gap-4 text-[12px] font-medium font-code-sm border-b border-outline-variant/30 pb-2">
+                                <span class="text-on-surface-variant w-20">12:05:18</span>
+                                <span class="material-symbols-outlined text-error text-sm">warning</span>
+                                <span class="text-error">Dropped duplicate packet 0x33b1...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Network Activity -->
+                    <div class="col-span-4 row-span-2 bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden flex flex-col shadow-[0_0_20px_rgba(0,240,255,0.03)] anim-panel">
+                        <div class="p-4 border-b border-outline-variant">
+                            <span class="text-[11px] tracking-[0.1em] font-bold font-label-caps text-on-surface-variant uppercase">Network Activity</span>
+                        </div>
+                        <div class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                            <div class="flex justify-between text-[12px] font-medium font-code-sm">
+                                <span class="text-on-surface-variant">10:42:01</span><span class="text-primary-container">HANDSHAKE: Node_42</span>
+                            </div>
+                            <div class="flex justify-between text-[12px] font-medium font-code-sm">
+                                <span class="text-on-surface-variant">10:41:58</span><span class="text-on-surface">PACKET_FWD: 0x8a92...</span>
+                            </div>
+                            <div class="flex justify-between text-[12px] font-medium font-code-sm">
+                                <span class="text-on-surface-variant">10:41:55</span><span class="text-error">RETRY: Timeout Alice</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: SEND -->
+            <div id="view-send" class="view-section hidden flex-col flex-1">
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <h1 class="text-[32px] font-bold leading-[1.2] font-headline-lg text-on-surface">Inject Payment Packet</h1>
+                        <p class="text-[16px] font-body-md text-on-surface-variant">Broadcast an offline transaction to the mesh</p>
+                    </div>
+                </div>
+                <div class="flex flex-col md:flex-row gap-6 flex-1">
+                    <div class="w-full md:w-1/2 bg-surface-container-low border border-outline-variant rounded-xl p-6 flex flex-col shadow-[0_0_20px_rgba(0,240,255,0.03)] anim-panel">
+                        <h2 class="text-[11px] tracking-[0.1em] font-bold font-label-caps text-primary-container uppercase mb-6">Transaction Details</h2>
+                        <div class="flex flex-col gap-4">
+                            <div class="flex flex-col gap-2">
+                                <label class="text-[12px] font-medium font-code-sm text-on-surface-variant">Receiver VPA</label>
+                                <input type="text" placeholder="e.g. bob@upi" class="bg-surface-container-highest border border-outline-variant rounded-lg px-4 py-3 text-on-surface focus:outline-none focus:border-primary-container transition-colors font-code-sm">
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <label class="text-[12px] font-medium font-code-sm text-on-surface-variant">Amount (INR)</label>
+                                <div class="relative">
+                                    <span class="absolute left-4 top-3 text-on-surface-variant font-code-sm">₹</span>
+                                    <input type="number" placeholder="0.00" class="w-full bg-surface-container-highest border border-outline-variant rounded-lg pl-8 pr-4 py-3 text-on-surface focus:outline-none focus:border-primary-container transition-colors font-code-sm">
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <label class="text-[12px] font-medium font-code-sm text-on-surface-variant">Secure PIN</label>
+                                <input type="password" placeholder="••••••" class="bg-surface-container-highest border border-outline-variant rounded-lg px-4 py-3 text-on-surface tracking-widest focus:outline-none focus:border-primary-container transition-colors font-code-sm">
+                            </div>
+                        </div>
+                        <div class="mt-8 pt-6 border-t border-outline-variant/50">
+                            <button class="w-full bg-primary-container text-on-primary py-4 rounded-lg text-[12px] tracking-[0.1em] font-bold font-label-caps hover:opacity-90 active:scale-[0.98] transition-all glow-cyan uppercase flex items-center justify-center gap-2">
+                                <span class="material-symbols-outlined text-lg">podcasts</span> Inject Packet to Mesh
+                            </button>
+                        </div>
+                    </div>
+                    <div class="w-full md:w-1/2 bg-surface-container-low border border-outline-variant rounded-xl p-6 flex flex-col shadow-[0_0_20px_rgba(0,240,255,0.03)] anim-panel">
+                        <h2 class="text-[11px] tracking-[0.1em] font-bold font-label-caps text-on-surface-variant uppercase mb-6">Local Queue Status</h2>
+                        <div class="flex-1 flex flex-col items-center justify-center text-center p-8 border border-dashed border-outline-variant/50 rounded-lg">
+                            <span class="material-symbols-outlined text-[48px] text-surface-variant mb-4">move_to_inbox</span>
+                            <h3 class="text-[16px] font-bold text-on-surface mb-2">No packets in queue</h3>
+                            <p class="text-[14px] text-on-surface-variant font-body-sm">Injected payments will appear here until they are bridged to the global ledger.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: LEDGER -->
+            <div id="view-ledger" class="view-section hidden flex-col flex-1">
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <h1 class="text-[32px] font-bold leading-[1.2] font-headline-lg text-on-surface">Global Ledger</h1>
+                        <p class="text-[16px] font-body-md text-on-surface-variant">Synchronized transactions across all bridges</p>
+                    </div>
+                    <button class="border border-outline-variant text-on-surface-variant px-4 py-2 rounded-lg text-[11px] tracking-[0.1em] font-bold font-label-caps hover:bg-surface-variant/20 active:scale-95 transition-all uppercase flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm">download</span> Export CSV
+                    </button>
+                </div>
+                <div class="flex-1 bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden flex flex-col shadow-[0_0_20px_rgba(0,240,255,0.03)] anim-panel">
+                    <div class="overflow-x-auto flex-1 custom-scrollbar">
+                        <table class="w-full text-left min-w-[800px]">
+                            <thead class="sticky top-0 bg-surface-container-highest z-10 border-b border-outline-variant shadow-sm">
+                                <tr>
+                                    <th class="p-4 text-[11px] tracking-[0.1em] font-bold font-label-caps text-on-surface-variant uppercase">Packet Hash</th>
+                                    <th class="p-4 text-[11px] tracking-[0.1em] font-bold font-label-caps text-on-surface-variant uppercase">Sender</th>
+                                    <th class="p-4 text-[11px] tracking-[0.1em] font-bold font-label-caps text-on-surface-variant uppercase">Receiver</th>
+                                    <th class="p-4 text-[11px] tracking-[0.1em] font-bold font-label-caps text-on-surface-variant uppercase">Amount</th>
+                                    <th class="p-4 text-[11px] tracking-[0.1em] font-bold font-label-caps text-on-surface-variant uppercase">Status</th>
+                                    <th class="p-4 text-[11px] tracking-[0.1em] font-bold font-label-caps text-on-surface-variant uppercase">Hops</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-outline-variant/50">
+                                <tr class="hover:bg-primary-container/5 transition-colors">
+                                    <td class="p-4 text-[12px] font-medium font-code-sm text-on-surface">0x88c1...f4</td>
+                                    <td class="p-4 text-[12px] font-medium font-code-sm text-on-surface-variant">alice@upi</td>
+                                    <td class="p-4 text-[12px] font-medium font-code-sm text-on-surface-variant">bob@upi</td>
+                                    <td class="p-4 text-[12px] font-bold font-code-sm text-primary-container">₹1,500</td>
+                                    <td class="p-4"><span class="inline-flex items-center px-4 py-1 rounded-full text-[10px] font-bold tracking-[0.1em] bg-surface-container-lowest border border-primary-container/50 text-primary-container glow-cyan uppercase">SETTLED</span></td>
+                                    <td class="p-4 text-[12px] font-medium font-code-sm text-on-surface-variant">3</td>
+                                </tr>
+                                <tr class="hover:bg-primary-container/5 transition-colors">
+                                    <td class="p-4 text-[12px] font-medium font-code-sm text-on-surface">0x44d2...a9</td>
+                                    <td class="p-4 text-[12px] font-medium font-code-sm text-on-surface-variant">charlie@upi</td>
+                                    <td class="p-4 text-[12px] font-medium font-code-sm text-on-surface-variant">david@upi</td>
+                                    <td class="p-4 text-[12px] font-bold font-code-sm text-primary-container">₹450</td>
+                                    <td class="p-4"><span class="inline-flex items-center px-4 py-1 rounded-full text-[10px] font-bold tracking-[0.1em] bg-surface-container-lowest border border-on-surface-variant/50 text-on-surface-variant uppercase">PENDING</span></td>
+                                    <td class="p-4 text-[12px] font-medium font-code-sm text-on-surface-variant">1</td>
+                                </tr>
+                                <tr class="hover:bg-primary-container/5 transition-colors">
+                                    <td class="p-4 text-[12px] font-medium font-code-sm text-on-surface">0x99e5...c2</td>
+                                    <td class="p-4 text-[12px] font-medium font-code-sm text-on-surface-variant">eve@upi</td>
+                                    <td class="p-4 text-[12px] font-medium font-code-sm text-on-surface-variant">mallory@upi</td>
+                                    <td class="p-4 text-[12px] font-bold font-code-sm text-primary-container">₹12,000</td>
+                                    <td class="p-4"><span class="inline-flex items-center px-4 py-1 rounded-full text-[10px] font-bold tracking-[0.1em] bg-surface-container-lowest border border-error/50 text-error uppercase">DROPPED</span></td>
+                                    <td class="p-4 text-[12px] font-medium font-code-sm text-on-surface-variant">-</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: SETTINGS -->
+            <div id="view-settings" class="view-section hidden flex-col flex-1">
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <h1 class="text-[32px] font-bold leading-[1.2] font-headline-lg text-on-surface">Node Configuration</h1>
+                        <p class="text-[16px] font-body-md text-on-surface-variant">Adjust local mesh and bridge parameters</p>
+                    </div>
+                </div>
+                <div class="flex flex-col md:flex-row gap-6 flex-1">
+                    <div class="w-full md:w-2/3 bg-surface-container-low border border-outline-variant rounded-xl p-6 flex flex-col shadow-[0_0_20px_rgba(0,240,255,0.03)] anim-panel">
+                        <h2 class="text-[11px] tracking-[0.1em] font-bold font-label-caps text-on-surface-variant uppercase mb-6">Network Settings</h2>
+                        <div class="flex flex-col gap-6 divide-y divide-outline-variant/30">
+                            <div class="flex justify-between items-center py-2">
+                                <div>
+                                    <h3 class="text-[16px] font-bold text-on-surface mb-1">Enable Auto-Gossip</h3>
+                                    <p class="text-[14px] text-on-surface-variant font-body-sm">Automatically sync with nearby peers every 5 seconds.</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" checked class="sr-only peer">
+                                    <div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-on-surface after:border-outline-variant after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+                                </label>
+                            </div>
+                            <div class="flex justify-between items-center pt-6 pb-2">
+                                <div>
+                                    <h3 class="text-[16px] font-bold text-on-surface mb-1">Bridge Mode (Internet Uplink)</h3>
+                                    <p class="text-[14px] text-on-surface-variant font-body-sm">Act as a gateway node to upload packets to the global ledger.</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-on-surface after:border-outline-variant after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+                                </label>
+                            </div>
+                            <div class="flex justify-between items-center pt-6 pb-2">
+                                <div>
+                                    <h3 class="text-[16px] font-bold text-on-surface mb-1">Debug Logging</h3>
+                                    <p class="text-[14px] text-on-surface-variant font-body-sm">Capture advanced metrics and raw packet dumps.</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" checked class="sr-only peer">
+                                    <div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-on-surface after:border-outline-variant after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mt-auto pt-8 flex gap-4">
+                            <button class="bg-primary-container text-on-primary px-6 py-2 rounded-lg text-[11px] tracking-[0.1em] font-bold font-label-caps hover:opacity-90 active:scale-95 transition-all uppercase glow-cyan">
+                                Save Changes
+                            </button>
+                            <button class="border border-outline-variant text-on-surface px-6 py-2 rounded-lg text-[11px] tracking-[0.1em] font-bold font-label-caps hover:bg-surface-variant/20 active:scale-95 transition-all uppercase">
+                                Reset Defaults
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: PROFILE -->
+            <div id="view-profile" class="view-section hidden flex-col flex-1">
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <h1 class="text-[32px] font-bold leading-[1.2] font-headline-lg text-on-surface">Node Profile</h1>
+                        <p class="text-[16px] font-body-md text-on-surface-variant">Identity and reputation metrics</p>
+                    </div>
+                </div>
+                <div class="flex flex-col lg:flex-row gap-6 flex-1">
+                    <div class="w-full lg:w-1/3 bg-surface-container-low border border-outline-variant rounded-xl p-8 flex flex-col items-center text-center shadow-[0_0_20px_rgba(0,240,255,0.03)] anim-panel relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-full h-32 bg-primary-container/5 border-b border-outline-variant/30"></div>
+                        <div class="w-24 h-24 rounded-full bg-surface-variant flex items-center justify-center border-4 border-surface-container-lowest text-4xl mb-4 relative z-10">
+                            👤<div class="absolute bottom-0 right-0 w-5 h-5 bg-primary-container rounded-full border-2 border-surface-container-lowest pulse-node"></div>
+                        </div>
+                        <h2 class="text-[24px] font-bold text-on-surface font-headline-sm mb-1 z-10">Mesh Admin</h2>
+                        <p class="text-[14px] font-medium font-code-sm text-primary-container mb-6 z-10">admin@mesh</p>
+                        <div class="w-full bg-surface-container-highest rounded-lg p-4 mb-6 z-10 border border-outline-variant/50">
+                            <div class="text-[11px] tracking-[0.1em] font-bold font-label-caps text-on-surface-variant uppercase mb-2">Simulated Balance</div>
+                            <div class="text-[32px] font-extrabold text-on-surface font-display-lg">₹ 45,200.00</div>
+                        </div>
+                        <button class="w-full border border-error text-error py-3 rounded-lg text-[11px] tracking-[0.1em] font-bold font-label-caps hover:bg-error/10 active:scale-[0.98] transition-all uppercase mt-auto z-10">
+                            Disconnect Node
+                        </button>
+                    </div>
+                    <div class="w-full lg:w-2/3 flex flex-col gap-6">
+                        <div class="grid grid-cols-2 gap-6">
+                            <div class="bg-surface-container-low border border-outline-variant rounded-xl p-6 shadow-[0_0_20px_rgba(0,240,255,0.03)] anim-panel">
+                                <span class="text-[11px] tracking-[0.1em] font-bold font-label-caps text-on-surface-variant uppercase mb-4 block">Packets Routed</span>
+                                <div class="text-[36px] font-extrabold text-primary-container font-display-lg">1,402</div>
+                            </div>
+                            <div class="bg-surface-container-low border border-outline-variant rounded-xl p-6 shadow-[0_0_20px_rgba(0,240,255,0.03)] anim-panel">
+                                <span class="text-[11px] tracking-[0.1em] font-bold font-label-caps text-on-surface-variant uppercase mb-4 block">Uptime</span>
+                                <div class="text-[36px] font-extrabold text-on-surface font-display-lg">99.9%</div>
+                            </div>
+                        </div>
+                        <div class="flex-1 bg-surface-container-low border border-outline-variant rounded-xl p-6 shadow-[0_0_20px_rgba(0,240,255,0.03)] anim-panel flex flex-col">
+                            <span class="text-[11px] tracking-[0.1em] font-bold font-label-caps text-on-surface-variant uppercase mb-6">Device Fingerprint</span>
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-center border-b border-outline-variant/30 pb-4">
+                                    <span class="text-[14px] text-on-surface-variant">Hardware ID</span>
+                                    <span class="text-[12px] font-medium font-code-sm text-on-surface">0x4f82a9...c31</span>
+                                </div>
+                                <div class="flex justify-between items-center border-b border-outline-variant/30 pb-4">
+                                    <span class="text-[14px] text-on-surface-variant">Protocol Version</span>
+                                    <span class="text-[12px] font-medium font-code-sm text-primary-container">v1.2.4-stable</span>
+                                </div>
+                                <div class="flex justify-between items-center border-b border-outline-variant/30 pb-4">
+                                    <span class="text-[14px] text-on-surface-variant">Bluetooth LE</span>
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold tracking-[0.1em] bg-surface-container-lowest border border-primary-container/50 text-primary-container uppercase">ACTIVE</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Modal Overlay: Flush Results -->
+    <div id="flushModal" class="fixed inset-0 z-[60] bg-background/80 backdrop-blur-sm flex items-center justify-center p-10 hidden opacity-0 transition-opacity duration-300">
+        <div class="w-full max-w-2xl bg-surface-container-high border border-primary-container/30 rounded-xl glow-cyan overflow-hidden flex flex-col max-h-[80vh] shadow-2xl modal-content transform scale-95 transition-transform duration-300">
+            <div class="p-6 border-b border-outline-variant flex justify-between items-center bg-surface-container-highest">
+                <div>
+                    <h2 class="text-[20px] font-semibold font-headline-sm text-on-surface">Flush Results</h2>
+                    <p class="text-[12px] font-medium font-code-sm text-on-surface-variant">Session ID: #FL-99238-SIM</p>
+                </div>
+                <button id="closeModalBtn" class="material-symbols-outlined text-on-surface-variant hover:text-primary-container transition-colors">close</button>
+            </div>
+            <div class="flex-1 overflow-y-auto custom-scrollbar">
+                <table class="w-full text-left">
+                    <thead class="sticky top-0 bg-surface-container-highest z-10 border-b border-outline-variant shadow-sm">
+                        <tr>
+                            <th class="p-4 text-[11px] tracking-[0.1em] font-bold font-label-caps text-on-surface-variant uppercase">Packet ID</th>
+                            <th class="p-4 text-[11px] tracking-[0.1em] font-bold font-label-caps text-on-surface-variant uppercase">Origin</th>
+                            <th class="p-4 text-[11px] tracking-[0.1em] font-bold font-label-caps text-on-surface-variant uppercase">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-outline-variant/50 bg-surface-container-low">
+                        <tr class="hover:bg-primary-container/5 transition-colors">
+                            <td class="p-4 text-[12px] font-medium font-code-sm text-on-surface">0x77f2...a1</td>
+                            <td class="p-4 text-[12px] font-medium font-code-sm text-on-surface-variant">Alice_Mobile</td>
+                            <td class="p-4"><span class="inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold tracking-[0.1em] bg-surface-container-lowest border border-primary-container/50 text-primary-container glow-cyan uppercase">SETTLED</span></td>
+                        </tr>
+                        <tr class="hover:bg-primary-container/5 transition-colors">
+                            <td class="p-4 text-[12px] font-medium font-code-sm text-on-surface">0x33b1...e4</td>
+                            <td class="p-4 text-[12px] font-medium font-code-sm text-on-surface-variant">Bob_Laptop</td>
+                            <td class="p-4"><span class="inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold tracking-[0.1em] bg-surface-container-lowest border border-error/50 text-error uppercase">DROPPED</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-6 border-t border-outline-variant bg-surface-container-highest flex justify-end">
+                <button id="ackBtn" class="bg-primary-container text-on-primary px-8 py-2 rounded-lg text-[11px] tracking-[0.1em] font-bold font-label-caps hover:opacity-90 transition-all uppercase glow-cyan">
+                    ACKNOWLEDGE ALL
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Initialization Scripts -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // 1. Chart.js Implementation
+            const ctx = document.getElementById('meshChart').getContext('2d');
+            const bgNodes = Array.from({length: 40}, () => ({ x: Math.random() * 100, y: Math.random() * 100, r: Math.random() * 3 + 1 }));
+            new Chart(ctx, {
+                type: 'bubble',
+                data: { datasets: [{ data: bgNodes, backgroundColor: 'rgba(185, 202, 203, 0.1)', borderColor: 'transparent' }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    scales: { x: { display: false, min: 0, max: 100 }, y: { display: false, min: 0, max: 100 } },
+                    animation: false, layout: { padding: 0 }
+                }
+            });
+
+            // 2. SPA Navigation Logic
+            const navItems = document.querySelectorAll('.nav-item');
+            const views = document.querySelectorAll('.view-section');
+
+            function triggerEntranceAnimations(viewId) {
+                const targetView = document.getElementById(viewId);
+                const panels = targetView.querySelectorAll('.anim-panel');
+                if (panels.length > 0) {
+                    anime({
+                        targets: panels,
+                        translateY: [30, 0],
+                        opacity: [0, 1],
+                        duration: 600,
+                        delay: anime.stagger(100),
+                        easing: 'easeOutCubic'
+                    });
+                }
+                
+                // Re-trigger specific dashboard animations if dashboard is loaded
+                if (viewId === 'view-dashboard') {
+                    anime({ targets: '.anim-node', scale: [0, 1], opacity: [0, 1], duration: 800, delay: anime.stagger(200), easing: 'easeOutElastic(1, .6)' });
+                    anime({ targets: '.anim-bridge', scale: [0, 1], opacity: [0, 1], duration: 1000, delay: 500, easing: 'easeOutElastic(1, .5)' });
+                }
+            }
+
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const targetId = item.getAttribute('data-target');
+                    
+                    // Update Nav Styles
+                    navItems.forEach(nav => {
+                        nav.classList.remove('bg-primary-container/10', 'text-primary-container', 'border-r-4', 'border-primary-container');
+                        nav.classList.add('text-on-surface-variant', 'hover:bg-surface-variant/20');
+                    });
+                    item.classList.add('bg-primary-container/10', 'text-primary-container', 'border-r-4', 'border-primary-container');
+                    item.classList.remove('text-on-surface-variant', 'hover:bg-surface-variant/20');
+                    
+                    // Hide all views
+                    views.forEach(view => {
+                        view.classList.add('hidden');
+                        view.classList.remove('flex');
+                    });
+                    
+                    // Show target view
+                    const targetView = document.getElementById(targetId);
+                    targetView.classList.remove('hidden');
+                    targetView.classList.add('flex'); // All sections use flex now
+                    
+                    // Scroll to top
+                    document.getElementById('main-content').scrollTop = 0;
+                    
+                    // Trigger animations
+                    triggerEntranceAnimations(targetId);
+                });
+            });
+
+            // 3. Initial Load Animations
+            anime({ targets: '#syncBanner', translateY: [20, 0], opacity: [0, 1], duration: 800, easing: 'easeOutElastic(1, .8)', delay: 500 });
+            anime({ targets: '.anim-nav-item', translateX: [-20, 0], opacity: [0, 1], duration: 600, delay: anime.stagger(100), easing: 'easeOutQuad' });
+            triggerEntranceAnimations('view-dashboard');
+
+            anime({ targets: '.anim-line', strokeDashoffset: [anime.setDashoffset, 0], easing: 'linear', duration: 2000, delay: 2000, loop: true });
+
+            // 4. Counters
+            anime({ targets: document.getElementById('cacheCounter'), innerHTML: [0, 1248], round: 1, easing: 'easeOutExpo', duration: 2000, delay: 800, update: function(a) { const el = document.getElementById('cacheCounter'); el.innerHTML = parseInt(el.innerHTML).toLocaleString(); } });
+            const transferObj = { val: 0 };
+            anime({ targets: transferObj, val: 42.8, easing: 'easeOutExpo', duration: 2000, delay: 900, update: function() { document.getElementById('transferCounter').innerHTML = transferObj.val.toFixed(1) + 'k'; } });
+
+            // 5. Interactions
+            const gossipBtn = document.getElementById('gossipBtn');
+            gossipBtn.addEventListener('click', () => {
+                gossipBtn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span> Syncing...';
+                anime({ targets: '.anim-pulse-circle', scale: [1, 2.5], opacity: [0.3, 0], duration: 1500, easing: 'easeOutExpo' });
+                setTimeout(() => {
+                    gossipBtn.innerHTML = '<span class="material-symbols-outlined text-sm">sensors</span> Gossip Round';
+                }, 1500);
+            });
+
+            // Modal Logic
+            const modal = document.getElementById('flushModal');
+            const modalContent = modal.querySelector('.modal-content');
+            function openModal() {
+                modal.classList.remove('hidden');
+                requestAnimationFrame(() => { modal.classList.remove('opacity-0'); modalContent.classList.remove('scale-95'); });
+            }
+            function closeModal() {
+                modal.classList.add('opacity-0'); modalContent.classList.add('scale-95');
+                setTimeout(() => { modal.classList.add('hidden'); }, 300);
+            }
+            document.getElementById('flushBtn').addEventListener('click', openModal);
+            document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+            document.getElementById('ackBtn').addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+        });
+    </script>
+</body>
+</html>

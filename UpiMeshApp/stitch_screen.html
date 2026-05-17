@@ -1,0 +1,416 @@
+<!DOCTYPE html><html class="dark" lang="en" style=""><svg class="inline-defs-container" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden"></svg><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>UPI Mesh Network - Status Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@600;700;800&amp;family=Inter:wght@400;500&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed-variant": "#5700c9",
+                        "tertiary-fixed-dim": "#d1bcff",
+                        "surface-dim": "#10131a",
+                        "background": "#10131a",
+                        "surface-container-low": "#191c22",
+                        "outline-variant": "#3b494b",
+                        "tertiary-fixed": "#e9ddff",
+                        "primary-fixed-dim": "#00dbe9",
+                        "surface-tint": "#00dbe9",
+                        "surface-container-high": "#272a31",
+                        "on-surface-variant": "#b9cacb",
+                        "on-error-container": "#ffdad6",
+                        "error-container": "#93000a",
+                        "surface-container-lowest": "#0b0e14",
+                        "primary-container": "#00f0ff",
+                        "tertiary-container": "#e1d2ff",
+                        "secondary-container": "#42474f",
+                        "on-background": "#e1e2eb",
+                        "on-secondary-container": "#b1b5bf",
+                        "on-secondary-fixed-variant": "#42474f",
+                        "on-error": "#690005",
+                        "outline": "#849495",
+                        "inverse-surface": "#e1e2eb",
+                        "on-primary": "#00363a",
+                        "surface": "#10131a",
+                        "surface-container": "#1d2026",
+                        "on-secondary-fixed": "#171c23",
+                        "on-tertiary": "#3c0090",
+                        "secondary-fixed-dim": "#c2c7d0",
+                        "secondary": "#c2c7d0",
+                        "inverse-on-surface": "#2e3037",
+                        "on-tertiary-container": "#7213ff",
+                        "primary": "#dbfcff",
+                        "primary-fixed": "#7df4ff",
+                        "secondary-fixed": "#dee2ec",
+                        "on-surface": "#e1e2eb",
+                        "surface-variant": "#32353c",
+                        "inverse-primary": "#006970",
+                        "on-primary-fixed-variant": "#004f54",
+                        "surface-container-highest": "#32353c",
+                        "on-primary-fixed": "#002022",
+                        "surface-bright": "#363940",
+                        "tertiary": "#faf3ff",
+                        "on-secondary": "#2c3138",
+                        "on-primary-container": "#006970",
+                        "error": "#ffb4ab",
+                        "on-tertiary-fixed": "#23005b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "margin-desktop": "40px",
+                        "container-max": "1440px",
+                        "gutter": "24px",
+                        "unit": "4px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "code-md": ["JetBrains Mono"],
+                        "code-sm": ["JetBrains Mono"],
+                        "body-sm": ["Inter"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "label-caps": ["JetBrains Mono"],
+                        "body-md": ["Inter"],
+                        "headline-sm": ["Hanken Grotesk"],
+                        "display-lg": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "code-md": ["14px", {"lineHeight": "1.5", "fontWeight": "500"}],
+                        "code-sm": ["12px", {"lineHeight": "1.4", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "body-sm": ["14px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "label-caps": ["11px", {"lineHeight": "1.2", "letterSpacing": "0.1em", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-sm": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #0b0e14; color: #e1e2eb; -webkit-font-smoothing: antialiased; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .mesh-line { background: linear-gradient(90deg, transparent 0%, #00f0ff 50%, transparent 100%); height: 1px; opacity: 0.3; }
+        .glow-cyan { box-shadow: 0 0 15px rgba(0, 240, 255, 0.15); }
+        .pulse-node { box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.4); animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(0, 240, 255, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 240, 255, 0); } }
+    </style>
+</head>
+<body class="font-body-md overflow-hidden h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center w-full px-margin-desktop h-16 z-50 sticky top-0 bg-surface-container-lowest dark:bg-surface-container-lowest border-b border-outline-variant dark:border-outline-variant">
+<div class="flex items-center gap-8">
+<div class="text-headline-sm font-headline-sm font-extrabold text-primary-container dark:text-primary-container tracking-tighter">
+                UPI Mesh Simulator
+            </div>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-label-caps font-label-caps text-primary-container font-bold border-b-2 border-primary-container pb-1" href="#">Network Stats</a>
+<a class="text-label-caps font-label-caps text-on-surface-variant font-medium hover:text-primary transition-colors duration-200" href="#">Live Traffic</a>
+<a class="text-label-caps font-label-caps text-on-surface-variant font-medium hover:text-primary transition-colors duration-200" href="#">Peer Explorer</a>
+</nav><div class="hidden lg:flex items-center gap-4 ml-4 pl-4 border-l border-outline-variant">
+    <div class="flex flex-col gap-1"><div class="flex items-center justify-between gap-2">
+    <span class="text-label-caps font-label-caps text-primary-container flex items-center gap-1.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+        SYNC COMPLETE
+    </span>
+    <span class="text-code-sm font-code-sm text-primary-container">100%</span>
+</div>
+<div class="w-32 h-1 bg-surface-bright rounded-full overflow-hidden">
+    <div class="h-full bg-primary-container glow-cyan" style="width: 100%"></div>
+</div></div>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">settings_suggest</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">account_circle</button>
+</div>
+<button class="bg-primary-container text-on-primary font-label-caps px-4 py-2 rounded-lg hover:opacity-80 active:scale-95 transition-all">
+                Connect Node
+            </button>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- SideNavBar -->
+<aside class="w-64 flex flex-col bg-surface-container-low border-r border-outline-variant z-40 bg-surface-container-lowest">
+<div class="p-6 border-b border-outline-variant">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center overflow-hidden border border-outline">
+<img alt="Avatar" class="w-full h-full" data-alt="A futuristic geometric avatar generated using abstract shapes in a tech-focused digital style. The avatar features a sharp blue and black color palette, representing a mesh network operator. The composition is clean and minimalist, set against a dark, low-contrast charcoal background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-wNU-R38dDe78wmjCNgXqP6RWdrpVp2b-HHnKr8Ms2FZHrB1_oJ7Y6BXYsMegLsS9j03FE582k__FXt9tSB3vi8owwgXdK4Yh4THQeXnsnO91N3By4NEXPVjHagNICqNzscmX_gyQpAq8LDVAjjoD9VhrfmUeJ5uLtOeW-qJxtNzmU_GhwVRBFFwZqyKzI0CJN1wLYWg_AaaBBL2JfzDVCmkm0l_BdyXzbXPLUW0lXNY3gJUCwa5XXUpWNFMAfnArJRAXIpIL9KR2">
+</div>
+<div>
+<div class="text-label-caps font-label-caps text-primary-container">Mesh Admin</div>
+<div class="text-code-sm font-code-sm text-on-surface-variant">0x4f82...</div>
+</div>
+</div>
+</div>
+<nav class="flex-1 py-4">
+<div class="flex items-center gap-4 bg-primary-container/10 text-primary-container border-r-4 border-primary-container px-6 py-4">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-label-caps font-label-caps">Dashboard</span>
+</div>
+<div class="flex items-center gap-4 text-on-surface-variant hover:bg-surface-variant/20 px-6 py-4 transition-all cursor-pointer">
+<span class="material-symbols-outlined">send</span>
+<span class="text-label-caps font-label-caps">Send</span>
+</div>
+<div class="flex items-center gap-4 text-on-surface-variant hover:bg-surface-variant/20 px-6 py-4 transition-all cursor-pointer">
+<span class="material-symbols-outlined">history_edu</span>
+<span class="text-label-caps font-label-caps">Ledger</span>
+</div>
+<div class="flex items-center gap-4 text-on-surface-variant hover:bg-surface-variant/20 px-6 py-4 transition-all cursor-pointer">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-label-caps font-label-caps">Settings</span>
+</div>
+</nav>
+<div class="p-6 border-t border-outline-variant">
+<button class="w-full bg-surface-variant text-on-surface py-3 rounded text-label-caps font-label-caps hover:bg-surface-container-high transition-colors mb-4">
+                    Gossip Round
+                </button>
+<div class="flex flex-col gap-2">
+<div class="flex items-center gap-4 text-on-surface-variant text-body-sm hover:text-primary cursor-pointer px-1">
+<span class="material-symbols-outlined text-sm">terminal</span>
+<span class="text-label-caps font-label-caps">System Logs</span>
+</div>
+<div class="flex items-center gap-4 text-on-surface-variant text-body-sm hover:text-primary cursor-pointer px-1">
+<span class="material-symbols-outlined text-sm">help_center</span>
+<span class="text-label-caps font-label-caps">Support</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 relative overflow-hidden bg-background p-margin-desktop flex flex-col gap-gutter"><div class="flex items-center justify-between bg-primary-container/10 border border-primary-container/30 p-4 rounded-xl mb-4 backdrop-blur-md">
+    <div class="flex items-center gap-3">
+        <span class="material-symbols-outlined text-primary-container">check_circle</span>
+        <div>
+            <div class="text-label-caps font-bold text-primary-container">Sync Complete</div>
+            <div class="text-body-sm text-on-surface-variant">Network synchronized across 124 nodes.</div>
+        </div>
+    </div>
+    <button class="material-symbols-outlined text-on-surface-variant text-sm">close</button>
+</div>
+<!-- Header Section -->
+<div class="flex justify-between items-end">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">UPI Mesh Network</h1>
+<p class="font-body-md text-on-surface-variant">Offline bluetooth protocol simulator</p>
+</div>
+<div class="flex gap-4">
+<button class="bg-primary-container text-on-primary px-6 py-2 rounded-lg font-label-caps hover:opacity-90 active:scale-95 transition-all glow-cyan">
+                        Gossip Round
+                    </button>
+<button class="border border-primary-container text-primary-container px-6 py-2 rounded-lg font-label-caps hover:bg-primary-container/10 active:scale-95 transition-all">
+                        Flush Bridges
+                    </button>
+<button class="border border-error text-error px-6 py-2 rounded-lg font-label-caps hover:bg-error/10 active:scale-95 transition-all">
+                        Reset Simulation
+                    </button>
+</div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-12 grid-rows-6 gap-gutter flex-1">
+<!-- MeshGraph Main Panel -->
+<div class="col-span-8 bg-surface-container-low border border-outline-variant rounded-xl relative overflow-hidden flex flex-col row-span-4 shadow-[0_0_20px_rgba(0,240,255,0.03)]">
+<div class="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container-low/50 backdrop-blur">
+<span class="text-label-caps font-label-caps text-on-surface-variant">MeshGraph: Local Topology</span>
+<div class="flex gap-2">
+<span class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
+<span class="text-code-sm font-code-sm text-primary-container">Active Nodes: 12</span>
+</div>
+</div>
+<div class="flex-1 relative bg-[#0b0e14] pattern-grid-lg" style="background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px); background-size: 20px 20px;">
+<!-- Simulated Network Visualization -->
+<div class="absolute inset-0 flex items-center justify-center">
+<!-- Node: Alice -->
+<div class="absolute top-[20%] left-[25%] flex flex-col items-center">
+<div class="w-12 h-12 rounded-full bg-surface-variant border-2 border-outline-variant flex items-center justify-center text-on-surface-variant z-10">
+<span class="material-symbols-outlined">person</span>
+</div>
+<span class="text-code-sm font-code-sm mt-2 text-on-surface-variant">Alice</span>
+</div>
+<!-- Node: Bob -->
+<div class="absolute bottom-[20%] right-[25%] flex flex-col items-center">
+<div class="w-12 h-12 rounded-full bg-surface-variant border-2 border-outline-variant flex items-center justify-center text-on-surface-variant z-10">
+<span class="material-symbols-outlined">person</span>
+</div>
+<span class="text-code-sm font-code-sm mt-2 text-on-surface-variant">Bob</span>
+</div>
+<!-- Node: Bridge (Highlighted) -->
+<div class="absolute top-[45%] left-[50%] -translate-x-1/2 flex flex-col items-center">
+<div class="w-16 h-16 rounded-full bg-primary-container/20 border-2 border-primary-container flex items-center justify-center text-primary-container z-10 pulse-node glow-cyan">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">router</span>
+</div>
+<span class="text-code-sm font-code-sm mt-2 text-primary-container font-bold">Bridge_Alpha</span>
+</div>
+<!-- Connection Lines -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none opacity-40">
+<line stroke="#00f0ff" stroke-dasharray="5,5" stroke-width="2" x1="25%" x2="50%" y1="20%" y2="45%"></line>
+<line stroke="#00f0ff" stroke-width="2" x1="75%" x2="50%" y1="80%" y2="45%"></line>
+<circle cx="50%" cy="45%" fill="url(#grad1)" opacity="0.1" r="100"></circle>
+<defs>
+<radialGradient cx="50%" cy="50%" id="grad1" r="50%">
+<stop offset="0%" style="stop-color:#00f0ff;stop-opacity:1"></stop>
+<stop offset="100%" style="stop-color:#00f0ff;stop-opacity:0"></stop>
+</radialGradient>
+</defs>
+</svg>
+</div>
+</div>
+</div><div class="col-span-8 row-span-2 bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden flex flex-col shadow-[0_0_20px_rgba(0,240,255,0.03)]">
+    <div class="p-4 border-b border-outline-variant flex justify-between items-center">
+        <span class="text-label-caps font-label-caps text-on-surface-variant">Live Traffic Log</span>
+        <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
+            <span class="text-code-sm font-code-sm text-primary-container uppercase">Streaming</span>
+        </div>
+    </div>
+    <div class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+        <div class="flex items-center gap-4 text-code-sm border-b border-outline-variant/30 pb-2">
+            <span class="text-on-surface-variant w-20">12:05:42</span>
+            <span class="material-symbols-outlined text-primary-container text-sm">check_circle</span>
+            <span class="text-on-surface">Packet 0x7a... propagated via Bridge_Alpha</span>
+        </div>
+        <div class="flex items-center gap-4 text-code-sm border-b border-outline-variant/30 pb-2">
+            <span class="text-on-surface-variant w-20">12:05:38</span>
+            <span class="material-symbols-outlined text-primary-container text-sm">sync</span>
+            <span class="text-on-surface">Gossip sync with Node_04 complete</span>
+        </div>
+        <div class="flex items-center gap-4 text-code-sm border-b border-outline-variant/30 pb-2">
+            <span class="text-on-surface-variant w-20">12:05:31</span>
+            <span class="material-symbols-outlined text-primary-container text-sm">hub</span>
+            <span class="text-on-surface">Discovered 2 new peers in range</span>
+        </div>
+        <div class="flex items-center gap-4 text-code-sm border-b border-outline-variant/30 pb-2">
+            <span class="text-on-surface-variant w-20">12:05:25</span>
+            <span class="material-symbols-outlined text-primary-container text-sm">sensors</span>
+            <span class="text-on-surface">RSSI calibration update: -64dBm</span>
+        </div>
+        <div class="flex items-center gap-4 text-code-sm border-b border-outline-variant/30 pb-2">
+            <span class="text-on-surface-variant w-20">12:05:18</span>
+            <span class="material-symbols-outlined text-error text-sm">warning</span>
+            <span class="text-on-surface">Dropped duplicate packet 0x33b1...</span>
+        </div>
+    </div>
+</div>
+<!-- Stats Panel -->
+<div class="col-span-4 row-span-2 bg-surface-container-low border border-outline-variant rounded-xl p-6 flex flex-col justify-between shadow-[0_0_20px_rgba(0,240,255,0.03)]">
+<div class="flex justify-between items-start">
+<span class="text-label-caps font-label-caps text-on-surface-variant">Idempotency Cache Size</span>
+<span class="material-symbols-outlined text-primary-container">memory</span>
+</div>
+<div>
+<div class="text-display-lg font-display-lg text-on-surface">1,248</div>
+<div class="flex items-center gap-1 text-primary-container">
+<span class="material-symbols-outlined text-sm">trending_up</span>
+<span class="text-code-sm font-code-sm">+12% from prev gossip</span>
+</div>
+</div>
+</div>
+<div class="col-span-4 row-span-2 bg-surface-container-low border border-outline-variant rounded-xl p-6 flex flex-col justify-between shadow-[0_0_20px_rgba(0,240,255,0.03)]">
+<div class="flex justify-between items-start">
+<span class="text-label-caps font-label-caps text-on-surface-variant">Gossip Transfers Count</span>
+<span class="material-symbols-outlined text-primary-container">hub</span>
+</div>
+<div>
+<div class="text-display-lg font-display-lg text-on-surface">42.8k</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">sync</span>
+<span class="text-code-sm font-code-sm">Real-time sync active</span>
+</div>
+</div>
+</div>
+<!-- Real-time Log (Small Table) -->
+<div class="col-span-4 row-span-2 bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden flex flex-col shadow-[0_0_20px_rgba(0,240,255,0.03)]">
+<div class="p-4 border-b border-outline-variant">
+<span class="text-label-caps font-label-caps text-on-surface-variant">Network Activity</span>
+</div>
+<div class="flex-1 overflow-y-auto p-4 space-y-3">
+<div class="flex justify-between text-code-sm font-code-sm">
+<span class="text-on-surface-variant">10:42:01</span>
+<span class="text-primary-container">HANDSHAKE: Node_42</span>
+</div>
+<div class="flex justify-between text-code-sm font-code-sm">
+<span class="text-on-surface-variant">10:41:58</span>
+<span class="text-on-surface">PACKET_FWD: 0x8a92...</span>
+</div>
+<div class="flex justify-between text-code-sm font-code-sm">
+<span class="text-on-surface-variant">10:41:55</span>
+<span class="text-error">RETRY: Timeout Alice</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Modal Overlay: Flush Results -->
+<div class="absolute inset-0 z-[60] bg-background/60 backdrop-blur-sm flex items-center justify-center p-gutter">
+<div class="w-full max-w-2xl bg-surface-container-high border border-primary-container/30 rounded-xl glow-cyan overflow-hidden flex flex-col max-h-[819px] backdrop-blur-xl">
+<div class="p-6 border-b border-outline-variant flex justify-between items-center bg-surface-container-highest">
+<div>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">Flush Results</h2>
+<p class="text-code-sm font-code-sm text-on-surface-variant">Session ID: #FL-99238-SIM</p>
+</div>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-on-surface">close</button>
+</div>
+<div class="flex-1 overflow-y-auto">
+<table class="w-full text-left">
+<thead class="sticky top-0 bg-surface-container-high z-10 border-b border-outline-variant">
+<tr>
+<th class="p-4 text-label-caps font-label-caps text-on-surface-variant">Packet ID</th>
+<th class="p-4 text-label-caps font-label-caps text-on-surface-variant">Origin</th>
+<th class="p-4 text-label-caps font-label-caps text-on-surface-variant">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<tr class="hover:bg-primary-container/5 transition-colors">
+<td class="p-4 font-code-sm text-on-surface">0x77f2...a1</td>
+<td class="p-4 font-code-sm text-on-surface-variant">Alice_Mobile</td>
+<td class="p-4"><span class="inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold tracking-[0.1em] bg-surface-container-lowest border border-primary-container/50 text-primary-container glow-cyan uppercase">
+    SETTLED
+</span></td>
+</tr>
+<tr class="hover:bg-primary-container/5 transition-colors">
+<td class="p-4 font-code-sm text-on-surface">0x33b1...e4</td>
+<td class="p-4 font-code-sm text-on-surface-variant">Bob_Laptop</td>
+<td class="p-4"><span class="inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold tracking-[0.1em] bg-surface-container-lowest border border-error/50 text-error uppercase">
+    DROPPED
+</span></td>
+</tr>
+<tr class="hover:bg-primary-container/5 transition-colors">
+<td class="p-4 font-code-sm text-on-surface">0x99a2...c8</td>
+<td class="p-4 font-code-sm text-on-surface-variant">Bridge_Alpha</td>
+<td class="p-4"><span class="inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold tracking-[0.1em] bg-surface-container-lowest border border-primary-container/50 text-primary-container glow-cyan uppercase">
+    SETTLED
+</span></td>
+</tr>
+<tr class="hover:bg-primary-container/5 transition-colors">
+<td class="p-4 font-code-sm text-on-surface">0x11d8...f2</td>
+<td class="p-4 font-code-sm text-on-surface-variant">Alice_Mobile</td>
+<td class="p-4"><span class="inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold tracking-[0.1em] bg-surface-container-lowest border border-primary-container/50 text-primary-container glow-cyan uppercase">
+    SETTLED
+</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-6 border-t border-outline-variant bg-surface-container-highest flex justify-end">
+<button class="bg-primary-container text-on-primary px-8 py-2 rounded-lg font-label-caps hover:opacity-90 transition-all">
+                            ACKNOWLEDGE ALL
+                        </button>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+
+</body></html>
