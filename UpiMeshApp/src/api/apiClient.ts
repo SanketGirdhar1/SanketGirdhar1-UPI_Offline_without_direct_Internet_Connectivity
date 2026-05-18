@@ -118,7 +118,7 @@ export const apiClient = {
 
   getProfile: () => api.get<NodeProfile>('/api/profile').then(r => r.data),
 
-  updateProfile: (data: { name?: string; avatarBase64?: string }) => 
+  updateProfile: (data: { name?: string; avatarBase64?: string }) =>
     api.put<NodeProfile>('/api/profile', data).then(r => r.data),
 
   testConnection: async () => {
